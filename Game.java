@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -11,6 +12,7 @@ public class Game implements MouseMotionListener, KeyListener {
     private JPanel gameMainPanel = new JPanel();
     private JPanel gameLockPanel = new JPanel();
     private JLabel mousePosition = new JLabel();
+    private JProgressBar lock = new JProgressBar(0);
 
     private final Dimension END_DIMENSION = new Dimension(300, 150);
     private final Font TEXT_FONT = new Font("Arial", 1, 20);
@@ -43,7 +45,7 @@ public class Game implements MouseMotionListener, KeyListener {
                 offset = mainWindow.getX() / (mainWindow.getX() / 2f);
                 break;
             default:
-                mainWindow.setTitle("Burn in Hell hacker!");
+                mainWindow.setTitle("Burn in Hell hacker!"); //Easter egg for "Reverse Engineers"
                 break;
         }
     }
@@ -58,10 +60,32 @@ public class Game implements MouseMotionListener, KeyListener {
         mainWindow.addMouseMotionListener(this);
         mainWindow.addKeyListener(this);
 
-        mousePosition.setText(String.valueOf(MouseX));
-        gameMainPanel.add(mousePosition);
+            gameMainPanel.setBorder(BorderFactory.createTitledBorder("gameMainPanel: BoxLayout"));
+            gameMainPanel.setLayout(new BoxLayout(gameMainPanel, BoxLayout.PAGE_AXIS));
+            gameMainPanel.setBackground(Color.yellow);
 
-        gameMainPanel.add(gameLockPanel);
+                gameLockPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                gameLockPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+                gameLockPanel.setBorder(BorderFactory.createBevelBorder(0,Color.cyan,Color.blue));
+                gameLockPanel.setBackground(Color.orange);
+                gameLockPanel.setLayout(new BoxLayout(gameLockPanel, BoxLayout.PAGE_AXIS));
+//                gameLockPanel.setBorder(BorderFactory.createTitledBorder("LockPanel: "));
+
+                    mousePosition.setText(String.valueOf(MouseX));
+                    mousePosition.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    mousePosition.setMinimumSize(new Dimension(30,20));
+                    mousePosition.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
+                gameLockPanel.add(mousePosition);
+
+
+                    lock.setPreferredSize(new Dimension(200, 20));
+                    lock.setMinimumSize(lock.getPreferredSize());
+                    lock.setMaximumSize(lock.getPreferredSize());
+                    lock.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
+                    lock.setAlignmentX(Component.CENTER_ALIGNMENT);
+                gameLockPanel.add(lock);
+
+            gameMainPanel.add(gameLockPanel);
         mainWindow.add(gameMainPanel);
 
         mainWindow.pack();
@@ -82,21 +106,34 @@ public class Game implements MouseMotionListener, KeyListener {
         mousePosition.setText(String.valueOf(newMouseX));
     }
 
-    private void keyDown(){
+    private void tryOpening(){
 
+        // TODO 1. Make holding opening the lock block the MouseX change
+        //
+
+        if(MouseX > access + offset || MouseX < access - offset){
+            damageLockpick();
+            System.out.println(lockpickHP);
+        }else{
+            incrementLock();
+        }
     }
 
-    private void tryOpening(){
-        while(keyDown){
-            System.out.println(keyDown);
+    private void incrementLock(){
+        if(lock.getValue()<100){
+            lock.setValue(lock.getValue()+1);
+        }else{
+            win();
         }
+    }
+    private void resetLock(){
+        lock.setValue(0);
     }
 
     private void damageLockpick(){
 
         // Currently the lockpick is damaged everytime the key press refreshes
         // You can easily hold a key and then spam the mouse movement. Thus making a brute force in.
-        // TODO 1. Make holding one key block the MouseX change
         // TODO 2. Make the ammount of time before the lockpick is going to be damaged according to how close the MouseX is to access
 
         if(lockpickHP>0f){
@@ -106,7 +143,6 @@ public class Game implements MouseMotionListener, KeyListener {
             mainWindow.removeKeyListener(this);
             lose();
         }
-
     }
 
     private void win(){
@@ -178,18 +214,11 @@ public class Game implements MouseMotionListener, KeyListener {
     public void keyPressed(KeyEvent e) {
         keyDown = true;
         tryOpening();
-//        if(MouseX > access + offset || MouseX < access - offset){
-//            damageLockpick();
-//            System.out.println(lockpickHP);
-//        }else{
-//            mainWindow.removeMouseMotionListener(this);
-//            mainWindow.removeKeyListener(this);
-//            win();
-//        }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
         keyDown = false;
+        resetLock();
     }
 }
