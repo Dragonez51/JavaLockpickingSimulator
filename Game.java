@@ -1,5 +1,4 @@
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -8,27 +7,26 @@ import java.awt.event.KeyListener;
 import java.util.Random;
 
 public class Game implements MouseMotionListener, KeyListener {
-    private JFrame mainWindow = new JFrame();
-    private JPanel gameMainPanel = new JPanel();
-    private JPanel gameLockPanel = new JPanel();
-    private JLabel mousePosition = new JLabel();
-    private JProgressBar lock = new JProgressBar(0);
+    private final JFrame mainWindow = new JFrame();
+    private final JPanel gameMainPanel = new JPanel();
+    private final JPanel gameLockPanel = new JPanel();
+    private final JLabel lockpickHealthLabel = new JLabel();
+    private final JProgressBar lock = new JProgressBar(0);
 
     private final Dimension END_DIMENSION = new Dimension(300, 150);
     private final Font TEXT_FONT = new Font("Arial", 1, 20);
 
     private float MouseX;
-
     private float access;
     private float offset;
-
     private float lockpickHP = 100.0f;
 
-    private boolean keyDown = false;
+    private boolean doOnce = true;
+    private boolean blockMouseXUpdate;
 
     private float distance;
-
     private int maxProgressBar = 100;
+    private int maxProgressBarClamp;
 
     public Game(int Difficulty){
 
@@ -39,25 +37,30 @@ public class Game implements MouseMotionListener, KeyListener {
         switch(Difficulty){ // do actions when the difficulty is set to:
             case 1:
                 mainWindow.setTitle("Lockpicking_Simulator: Easy");
-                offset = mainWindow.getX() / (mainWindow.getX() / 8f);
+                offset = mainWindow.getX() / (mainWindow.getX() / 4f);
+                maxProgressBarClamp = 25;
                 break;
             case 2:
                 mainWindow.setTitle("Lockpicking_Simulator: Normal");
-                offset = mainWindow.getX() / (mainWindow.getX() / 4f);
+                offset = mainWindow.getX() / (mainWindow.getX() / 2f);
+                maxProgressBarClamp = 15;
                 break;
             case 3:
                 mainWindow.setTitle("Lockpicking_Simulator: Hard");
-                offset = mainWindow.getX() / (mainWindow.getX() / 2f);
+                offset = mainWindow.getX() / (mainWindow.getX() / 0.3f);
+                maxProgressBarClamp = 5;
                 break;
             default:
                 mainWindow.setTitle("Burn in Hell hacker!"); //Easter egg for "Reverse Engineers"
                 break;
         }
     }
+
     private void randomAccess(){
         Random rand = new Random();
-        access = rand.nextFloat(mainWindow.getX());
+        access = rand.nextInt(mainWindow.getWidth());
     }
+
     private void initWindow(){
 
         mainWindow.setResizable(false);
@@ -75,17 +78,16 @@ public class Game implements MouseMotionListener, KeyListener {
                 gameLockPanel.setBackground(Color.orange);
                 gameLockPanel.setLayout(new BoxLayout(gameLockPanel, BoxLayout.PAGE_AXIS));
 
-                    mousePosition.setText(String.valueOf(MouseX));
-                    mousePosition.setAlignmentX(Component.CENTER_ALIGNMENT);
-                    mousePosition.setMinimumSize(new Dimension(30,20));
-                    mousePosition.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
-                gameLockPanel.add(mousePosition);
+                    lockpickHealthLabel.setText(String.valueOf(lockpickHP));
+                    lockpickHealthLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    lockpickHealthLabel.setMinimumSize(new Dimension(30,20));
+                    lockpickHealthLabel.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
+                gameLockPanel.add(lockpickHealthLabel);
 
 
                     lock.setPreferredSize(new Dimension(200, 20));
                     lock.setMinimumSize(lock.getPreferredSize());
                     lock.setMaximumSize(lock.getPreferredSize());
-                    lock.setBorder(BorderFactory.createEmptyBorder(5,0,5,0));
                     lock.setAlignmentX(Component.CENTER_ALIGNMENT);
                 gameLockPanel.add(lock);
 
@@ -106,15 +108,17 @@ public class Game implements MouseMotionListener, KeyListener {
         // 2. B̶l̶o̶c̶k̶s̶ i̶m̶a̶g̶e̶ u̶p̶d̶a̶t̶i̶n̶g̶ f̶o̶r̶ t̶h̶e̶ g̶r̶a̶p̶h̶i̶c̶a̶l̶ i̶n̶t̶e̶r̶p̶r̶e̶t̶a̶t̶i̶o̶n̶
     }
 
-    private void updateMouseX(float newMouseX){
-        mousePosition.setText(String.valueOf(newMouseX));
+    private void updateLockpickHealthLabel(float newLockpickHealth){
+        lockpickHealthLabel.setText(String.valueOf(newLockpickHealth));
     }
 
-    private void tryOpening(){
+    private void distance(){ // called every ms of beign held down
 
-        // TODO 1. Make holding opening the lock block the MouseX change
-        // TODO 2. Make the ammount of time before the lockpick is going to be damaged according to how close the MouseX is to access
-        // TODO count the distance of MouseX from access.
+        if(doOnce){
+            doOnce = false;
+        }else{
+            return;
+        }
 
 
         // Count the distance between current Mouse position and the 'access' position
@@ -124,32 +128,28 @@ public class Game implements MouseMotionListener, KeyListener {
         else{
             distance=access-MouseX;
         }
+
         int prctg = (int)(distance / (mainWindow.getX() / 100));
 
-        if(maxProgressBar-offset<0){
-            maxProgressBar = 0;
+        maxProgressBar = 100;
+        if(prctg < maxProgressBarClamp){
+            if((maxProgressBar-prctg)+offset<0){
+                maxProgressBar = 0;
+            }else{
+                maxProgressBar = (int) ((maxProgressBar-prctg)+offset);
+            }
         }else{
-            maxProgressBar -= offset;
+            maxProgressBar = 0;
         }
 
-        //The lower the 'prctg' the closer it is to the answer
-        //TODO The closer it is the more % you can do on progressBar.
-
-        incrementLock();
-
-
-//        if(MouseX > access + offset || MouseX < access - offset){
-//            damageLockpick();
-//            System.out.println(lockpickHP);
-//        }else{
-//            incrementLock();
-//        }
     }
 
     private void incrementLock(){
         if(lock.getValue()<100){
             if(lock.getValue()<maxProgressBar){
                 lock.setValue(lock.getValue()+1);
+            }else{
+                damageLockpick();
             }
         }else{
             win();
@@ -160,14 +160,10 @@ public class Game implements MouseMotionListener, KeyListener {
     }
 
     private void damageLockpick(){
-
-        // Currently the lockpick is damaged everytime the MouseX is not in the right place
-
         if(lockpickHP>0f){
             lockpickHP-=1f;
+            updateLockpickHealthLabel(lockpickHP);
         }else{
-            mainWindow.removeMouseMotionListener(this);
-            mainWindow.removeKeyListener(this);
             lose();
         }
     }
@@ -192,15 +188,12 @@ public class Game implements MouseMotionListener, KeyListener {
         winWindow.setLocationRelativeTo(null);
 
         mainWindow.dispose();
-        System.out.println("MouseX: "+MouseX);
-        System.out.println("Offset: "+offset);
-        System.out.println("Access: "+access);
     }
 
     private void lose(){
         JFrame loseWindow = new JFrame(mainWindow.getTitle());
         JPanel losePanel = new JPanel();
-        JLabel loseText = new JLabel("You failed to open the lock!");
+        JLabel loseText = new JLabel("Your lockpick broke!");
 
         loseWindow.setResizable(false);
         loseWindow.setVisible(true);
@@ -216,9 +209,6 @@ public class Game implements MouseMotionListener, KeyListener {
         loseWindow.setLocationRelativeTo(null);
 
         mainWindow.dispose();
-        System.out.println("MouseX: "+MouseX);
-        System.out.println("Offset: "+offset);
-        System.out.println("Access: "+access);
     }
 
     @Override
@@ -228,9 +218,8 @@ public class Game implements MouseMotionListener, KeyListener {
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        if(!keyDown){
+        if(!blockMouseXUpdate){
             MouseX = e.getX();
-            updateMouseX(MouseX);
         }
     }
 
@@ -241,13 +230,15 @@ public class Game implements MouseMotionListener, KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        keyDown = true;
-        tryOpening();
+        blockMouseXUpdate = true;
+        distance();
+        incrementLock();
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        keyDown = false;
+        blockMouseXUpdate = false;
+        doOnce = true;
         resetLock();
     }
 }
