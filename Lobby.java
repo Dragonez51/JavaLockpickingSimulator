@@ -23,11 +23,8 @@ public class Lobby {
         lobbyFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         lobbyMainPanel.setLayout(new BoxLayout(lobbyMainPanel, BoxLayout.PAGE_AXIS));
-        lobbyMainPanel.setBorder(BorderFactory.createTitledBorder("panel")); // Debugging stuff
-        lobbyMainPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        Difficulty.setAlignmentX(Component.CENTER_ALIGNMENT);
-        Difficulty.setBorder(BorderFactory.createTitledBorder("Difficulty")); // Debugging stuff
+        Difficulty.setBorder(BorderFactory.createEmptyBorder(20 ,0,0,0));
 
         tekst.setText("Choose a lock difficulty");
         tekst.setPreferredSize(new Dimension(600,30));
