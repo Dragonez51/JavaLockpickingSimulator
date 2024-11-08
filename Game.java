@@ -25,6 +25,11 @@ public class Game implements MouseMotionListener, KeyListener {
     private float lockpickHP = 100.0f;
 
     private boolean keyDown = false;
+
+    private float distance;
+
+    private int maxProgressBar = 100;
+
     public Game(int Difficulty){
 
         initWindow(); // Standard initialization of a swing window
@@ -69,7 +74,6 @@ public class Game implements MouseMotionListener, KeyListener {
                 gameLockPanel.setBorder(BorderFactory.createBevelBorder(0,Color.cyan,Color.blue));
                 gameLockPanel.setBackground(Color.orange);
                 gameLockPanel.setLayout(new BoxLayout(gameLockPanel, BoxLayout.PAGE_AXIS));
-//                gameLockPanel.setBorder(BorderFactory.createTitledBorder("LockPanel: "));
 
                     mousePosition.setText(String.valueOf(MouseX));
                     mousePosition.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -109,19 +113,44 @@ public class Game implements MouseMotionListener, KeyListener {
     private void tryOpening(){
 
         // TODO 1. Make holding opening the lock block the MouseX change
-        //
+        // TODO 2. Make the ammount of time before the lockpick is going to be damaged according to how close the MouseX is to access
+        // TODO count the distance of MouseX from access.
 
-        if(MouseX > access + offset || MouseX < access - offset){
-            damageLockpick();
-            System.out.println(lockpickHP);
-        }else{
-            incrementLock();
+
+        // Count the distance between current Mouse position and the 'access' position
+        if(MouseX>access){
+            distance=MouseX-access;
         }
+        else{
+            distance=access-MouseX;
+        }
+        int prctg = (int)(distance / (mainWindow.getX() / 100));
+
+        if(maxProgressBar-offset<0){
+            maxProgressBar = 0;
+        }else{
+            maxProgressBar -= offset;
+        }
+
+        //The lower the 'prctg' the closer it is to the answer
+        //TODO The closer it is the more % you can do on progressBar.
+
+        incrementLock();
+
+
+//        if(MouseX > access + offset || MouseX < access - offset){
+//            damageLockpick();
+//            System.out.println(lockpickHP);
+//        }else{
+//            incrementLock();
+//        }
     }
 
     private void incrementLock(){
         if(lock.getValue()<100){
-            lock.setValue(lock.getValue()+1);
+            if(lock.getValue()<maxProgressBar){
+                lock.setValue(lock.getValue()+1);
+            }
         }else{
             win();
         }
@@ -132,9 +161,7 @@ public class Game implements MouseMotionListener, KeyListener {
 
     private void damageLockpick(){
 
-        // Currently the lockpick is damaged everytime the key press refreshes
-        // You can easily hold a key and then spam the mouse movement. Thus making a brute force in.
-        // TODO 2. Make the ammount of time before the lockpick is going to be damaged according to how close the MouseX is to access
+        // Currently the lockpick is damaged everytime the MouseX is not in the right place
 
         if(lockpickHP>0f){
             lockpickHP-=1f;
@@ -201,8 +228,10 @@ public class Game implements MouseMotionListener, KeyListener {
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        MouseX = e.getX();
-        updateMouseX(MouseX);
+        if(!keyDown){
+            MouseX = e.getX();
+            updateMouseX(MouseX);
+        }
     }
 
     @Override
